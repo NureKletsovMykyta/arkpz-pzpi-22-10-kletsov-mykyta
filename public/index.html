@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Завантаженість ділянок</title>
+    <style>
+        .section {
+            padding: 20px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .low {
+            background-color: green;
+            color: white;
+        }
+        .medium {
+            background-color: orange;
+            color: white;
+        }
+        .high {
+            background-color: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Завантаженість ділянок</h1>
+    <div id="sections"></div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('/sensors');
+                const data = await response.json();
+              //  console.log(data); // Додано логування
+                const sectionsDiv = document.getElementById('sections');
+                sectionsDiv.innerHTML = ''; // Очищення попередніх даних
+
+                const groupedData = data.reduce((acc, item) => {
+                    if (!acc[item.type]) {
+                        acc[item.type] = [];
+                    }
+                    acc[item.type].push(item);
+                    return acc;
+                }, {});
+
+                ['Entrance', 'Into', 'Exit'].forEach(type => {
+                    const typeData = groupedData[type];
+                    if (typeData && typeData.length > 0) {
+                        const latestItem = typeData[0]; // Отримуємо останній запис для кожного типу
+                        const sectionDiv = document.createElement('div');
+                        sectionDiv.classList.add('section');
+
+                        if (latestItem.count < 100) {
+                            sectionDiv.classList.add('low');
+                        } else if (latestItem.count >= 100 && latestItem.count < 200) {
+                            sectionDiv.classList.add('medium');
+                        } else if (latestItem.count >= 200) {
+                            sectionDiv.classList.add('high');
+                        }
+
+                        sectionDiv.innerHTML = `<strong>${latestItem.type}</strong>: ${latestItem.count}`;
+                        sectionsDiv.appendChild(sectionDiv);
+                    }
+                });
+            } catch (error) {
+                console.error("Помилка отримання даних з сервера:", error);
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 5000); // Оновлення даних кожні 5 секунд
+    </script>
+</body>
+</html>
